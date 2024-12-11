@@ -8,7 +8,7 @@ public class GamePanel extends JPanel implements ActionListener {
     final int SCREEN_HEIGHT = 500;
     final int CELL_SIZE = 25;
     final int GAME_CELLS = (SCREEN_WIDTH * SCREEN_HEIGHT) / (CELL_SIZE * CELL_SIZE);
-    final int DELAY = 75; //Timer delay/Game speed
+    final int DELAY = 65; //Timer delay/Game speed
     int x[] = new int[GAME_CELLS]; //Array for all possible snake x positions
     int y[] = new int[GAME_CELLS]; //Array for all possible snake y positions
     char direction = 'R';
@@ -24,6 +24,7 @@ public class GamePanel extends JPanel implements ActionListener {
     Image blueApple;
     Image greenApple;
     Image redApple;
+    int appleChoice;
 
     public GamePanel() {
         forestBackground = new ImageIcon("images/forestBackground.jpg").getImage();
@@ -40,19 +41,19 @@ public class GamePanel extends JPanel implements ActionListener {
         ActionMap panelActionMap = this.getActionMap();
 
         panelInputMap.put(KeyStroke.getKeyStroke("UP"), "upActionMapKey");
-        panelInputMap.put(KeyStroke.getKeyStroke('W'), "upActionMapKey");
+        panelInputMap.put(KeyStroke.getKeyStroke('w'), "upActionMapKey");
         panelActionMap.put("upActionMapKey", new KeyAction('U'));
 
         panelInputMap.put(KeyStroke.getKeyStroke("DOWN"), "downActionMapKey");
-        panelInputMap.put(KeyStroke.getKeyStroke('S'), "downActionMapKey");
+        panelInputMap.put(KeyStroke.getKeyStroke('s'), "downActionMapKey");
         panelActionMap.put("downActionMapKey", new KeyAction('D'));
 
         panelInputMap.put(KeyStroke.getKeyStroke("LEFT"), "leftActionMapKey");
-        panelInputMap.put(KeyStroke.getKeyStroke('L'), "leftActionMapKey");
+        panelInputMap.put(KeyStroke.getKeyStroke('l'), "leftActionMapKey");
         panelActionMap.put("leftActionMapKey", new KeyAction('L'));
 
         panelInputMap.put(KeyStroke.getKeyStroke("RIGHT"), "rightActionMapKey");
-        panelInputMap.put(KeyStroke.getKeyStroke('R'), "rightActionMapKey");
+        panelInputMap.put(KeyStroke.getKeyStroke('r'), "rightActionMapKey");
         panelActionMap.put("rightActionMapKey", new KeyAction('R'));
 
         this.setPreferredSize(new Dimension(SCREEN_WIDTH, SCREEN_HEIGHT));
@@ -64,6 +65,7 @@ public class GamePanel extends JPanel implements ActionListener {
 
     public void startGame() {
         newApple();
+        appleChoice = 1;
         running = true;
         timer = new Timer(DELAY, this);
         timer.start();
@@ -78,14 +80,17 @@ public class GamePanel extends JPanel implements ActionListener {
     public void draw(Graphics g) {
         if (running) {
             //Draw Grid
-            for (int i = 0; i <= SCREEN_HEIGHT / CELL_SIZE; i++) {
+            /*for (int i = 0; i <= SCREEN_HEIGHT / CELL_SIZE; i++) {
                 g.setColor(Color.BLACK);
                 g.drawLine(0, i * CELL_SIZE, SCREEN_WIDTH, i * CELL_SIZE); //Draw horizontal line
-                g.drawLine(i * SCREEN_HEIGHT, 0, i * SCREEN_HEIGHT, SCREEN_HEIGHT); //Draw vertical line
-            }
+                g.drawLine(i * CELL_SIZE, 0, i * CELL_SIZE, SCREEN_HEIGHT); //Draw vertical line
+            }*/
+
+           //Draw Background
+           g.drawImage(forestBackground, 0, 0, null);
 
             //Draw Apple
-            switch(random.nextInt(1, 4)) {
+            switch(appleChoice) {
                 case 1 -> g.drawImage(redApple, appleX, appleY, null);
                 case 2 -> g.drawImage(greenApple, appleX, appleY, null);
                 case 3 -> g.drawImage(blueApple, appleX, appleY, null);
@@ -93,13 +98,19 @@ public class GamePanel extends JPanel implements ActionListener {
 
             //Draw Snake
             for (int i = 0; i < bodyParts; i++) {
-                if (i == 0) g.setColor(new Color(1, 50, 32));
+                if (i == 0) g.setColor(new Color(1, 150, 32));
                 else {
                     g.setColor(new Color(144, 238, 144));
-                    g.setColor(new Color(random.nextInt(256), random.nextInt(256), random.nextInt(256)));
+                    //g.setColor(new Color(random.nextInt(256), random.nextInt(256), random.nextInt(256)));
                 }
-                g.fillRect(x[i], x[i], CELL_SIZE, CELL_SIZE);
+                g.fillRect(x[i], y[i], CELL_SIZE, CELL_SIZE);
             }
+
+            //Draw Score
+            g.setColor(Color.RED);
+            g.setFont(new Font("Monospaced", Font.BOLD, 26));
+            FontMetrics fontMetrics = g.getFontMetrics();
+            g.drawString("Score: " + applesEaten, (SCREEN_WIDTH - fontMetrics.stringWidth("Score: " + applesEaten)) / 2, g.getFont().getSize());
         } else {
             gameOver(g);
         }
@@ -111,13 +122,14 @@ public class GamePanel extends JPanel implements ActionListener {
 
     public void newApple() {
         //Spawn new apple
-        appleX = random.nextInt(SCREEN_WIDTH) / CELL_SIZE;
-        appleY = random.nextInt(SCREEN_HEIGHT) / CELL_SIZE;
+        appleX = random.nextInt(SCREEN_WIDTH / CELL_SIZE) * CELL_SIZE;
+        appleY = random.nextInt(SCREEN_HEIGHT / CELL_SIZE) * CELL_SIZE;
     }
 
     public void checkApple() {
         //Check for apple collisions
         if (x[0] == appleX && y[0] == appleY) {
+            appleChoice = random.nextInt(1, 4);
             newApple();
             applesEaten++;
             bodyParts++;
@@ -155,19 +167,19 @@ public class GamePanel extends JPanel implements ActionListener {
     }
 
     public class KeyAction extends AbstractAction {
-        char direction;
+        char way;
 
-        public KeyAction(char direction) {
-            this.direction = direction;
+        public KeyAction(char way) {
+            this.way = way;
         }
         
         @Override
         public void actionPerformed(ActionEvent ae) {
-            switch (direction) {
+            switch (way) {
                 case 'U' -> {if (direction != 'D') direction = 'U';}
                 case 'D' -> {if (direction != 'U') direction = 'D';}
-                case 'L' -> {if (direction != 'R') direction = 'R';}
-                case 'R' -> {if (direction != 'L') direction = 'L';}
+                case 'L' -> {if (direction != 'R') direction = 'L';}
+                case 'R' -> {if (direction != 'L') direction = 'R';}
             }
         }
     }
