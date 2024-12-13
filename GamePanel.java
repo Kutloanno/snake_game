@@ -108,6 +108,7 @@ public class GamePanel extends JPanel implements ActionListener {
         staticColourButton.setIcon(new ImageIcon("images/unchecked-mark.png"));
         staticColourButton.setSelectedIcon(new ImageIcon("images/checked-mark.png"));
         staticColourButton.setEnabled(true);
+        staticColourButton.setMnemonic(KeyEvent.VK_T);
 
         ButtonGroup buttonGroup = new ButtonGroup();
         buttonGroup.add(rainbowbutton);
@@ -281,7 +282,7 @@ public class GamePanel extends JPanel implements ActionListener {
         //Draw Shortcuts
         g.setFont(new Font("Monospaced", Font.BOLD, 12));
         FontMetrics fontMetrics1 = g.getFontMetrics();
-        g.drawString("Start - Alt S : Exit - Alt E : Rainbow - Alt R : Static - Alt R", (SCREEN_WIDTH - fontMetrics1.stringWidth("Start - Alt S : Exit - Alt E : Rainbow - Alt R : Static - Alt R")) / 2, 450);
+        g.drawString("Start - Alt S : Exit - Alt E : Rainbow - Alt R : Static - Alt T", (SCREEN_WIDTH - fontMetrics1.stringWidth("Start - Alt S : Exit - Alt E : Rainbow - Alt R : Static - Alt T")) / 2, 450);
 
         //g.setColor(new Color(random.nextInt(256), random.nextInt(256), random.nextInt(256)));
         //g.fillOval(150, 260, 20, 20);
