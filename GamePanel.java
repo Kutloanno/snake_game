@@ -9,7 +9,7 @@ public class GamePanel extends JPanel implements ActionListener {
     final int SCREEN_HEIGHT = 500;
     final int CELL_SIZE = 25;
     final int GAME_CELLS = (SCREEN_WIDTH * SCREEN_HEIGHT) / (CELL_SIZE * CELL_SIZE);
-    final int DELAY = 65; //Timer delay/Game speed
+    final int DELAY = 75; //Timer delay/Game speed
     int x[] = new int[GAME_CELLS]; //Array for all possible snake x positions
     int y[] = new int[GAME_CELLS]; //Array for all possible snake y positions
     char direction = 'R';
@@ -21,8 +21,8 @@ public class GamePanel extends JPanel implements ActionListener {
     int appleY;
     Timer timer;
     Random random;
-    Image forestBackground;
-    Image cityBackground;
+    Image snakeRuinsBackground;
+    Image gameOverBackground;
     Image blueApple;
     Image greenApple;
     Image redApple;
@@ -30,13 +30,18 @@ public class GamePanel extends JPanel implements ActionListener {
     JLabel startLabel;
     JButton startButton;
     JButton exitButton;
+    JButton restartButton;
     JRadioButton rainbowbutton;
     JRadioButton staticColourButton;
-    Color headColor;
+    Color bodyColor = new Color(240, 240, 240);
+    boolean rainbowBody = false;
+    GameFrame gameFrame;
 
-    public GamePanel() {
-        forestBackground = new ImageIcon("images/mss.jpg").getImage();
-        cityBackground = new ImageIcon("images/mss.jpg").getImage();
+    public GamePanel(GameFrame gameFrame) {
+        this.gameFrame = gameFrame;
+
+        snakeRuinsBackground = new ImageIcon("images/snakeRuins.jpg").getImage();
+        gameOverBackground = new ImageIcon("images/darkSnakeBackground.jpg").getImage();
 
         blueApple = new ImageIcon("images/blueApple.png").getImage();
         greenApple = new ImageIcon("images/greenApple.png").getImage();
@@ -50,36 +55,59 @@ public class GamePanel extends JPanel implements ActionListener {
         startLabel.setBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED, Color.GRAY, Color.WHITE));
 
         startButton = new JButton("Start");
-        startButton.setBounds(52, 40, 150, 50);
+        startButton.setBounds(50, 40, 150, 50);
         startButton.addActionListener(this);
         startButton.setFocusable(false);
         startButton.setContentAreaFilled(false);
         startButton.setFont(new Font("Fato", Font.BOLD, 32));
-        startButton.setForeground(new Color(240, 240 ,240));
+        startButton.setForeground(bodyColor);
+        startButton.setMnemonic(KeyEvent.VK_S);
+        startButton.setEnabled(true);
 
         exitButton = new JButton("Exit");
-        exitButton.setBounds(52, 170,150, 50);
+        exitButton.setBounds(50, 150,150, 50);
         exitButton.addActionListener(this);
         exitButton.setFocusable(false);
         exitButton.setContentAreaFilled(false);
         exitButton.setFont(new Font("Fato", Font.BOLD, 32));
-        exitButton.setForeground(new Color(240, 240 ,240));
+        exitButton.setForeground(bodyColor);
+        exitButton.setMnemonic(KeyEvent.VK_E);
+
+        restartButton = new JButton("Restart");
+        restartButton.setBounds(25, 10, 200, 60);
+        restartButton.addActionListener(this);
+        restartButton.setFocusable(false);
+        restartButton.setContentAreaFilled(false);
+        restartButton.setFont(new Font("Fato", Font.BOLD, 32));
+        restartButton.setForeground(Color.RED);
+        restartButton.setMnemonic(KeyEvent.VK_R);
+        restartButton.setEnabled(false);
+        restartButton.setVisible(false);
+        
 
         rainbowbutton = new JRadioButton("Rainbow");
-        rainbowbutton.setBounds(25, 125, 120, 50);
+        rainbowbutton.setBounds(25, 100, 120, 50);
         rainbowbutton.setOpaque(false);
+        rainbowbutton.addActionListener(this);
         rainbowbutton.setFocusable(false);
-        rainbowbutton.setFont(new Font("Fato", Font.BOLD, 16));
-        rainbowbutton.setForeground(new Color(240, 240 ,240));
+        rainbowbutton.setFont(new Font("Fato", Font.BOLD, 18));
+        rainbowbutton.setForeground(bodyColor);
+        rainbowbutton.setIcon(new ImageIcon("images/unchecked-mark.png"));
+        rainbowbutton.setSelectedIcon(new ImageIcon("images/checked-mark.png"));
+        rainbowbutton.setMnemonic(KeyEvent.VK_R);
+        rainbowbutton.setEnabled(true);
 
         staticColourButton = new JRadioButton("Static");
-        staticColourButton.setBounds(155, 125, 120, 50);
+        staticColourButton.setBounds(155, 100, 120, 50);
         staticColourButton.setBackground(null);
         staticColourButton.setFocusable(false);
         staticColourButton.setOpaque(false);
         staticColourButton.addActionListener(this);
-        staticColourButton.setFont(new Font("Fato", Font.BOLD, 16));
-        staticColourButton.setForeground(new Color(240, 240 ,240));
+        staticColourButton.setFont(new Font("Fato", Font.BOLD, 18));
+        staticColourButton.setForeground(bodyColor);
+        staticColourButton.setIcon(new ImageIcon("images/unchecked-mark.png"));
+        staticColourButton.setSelectedIcon(new ImageIcon("images/checked-mark.png"));
+        staticColourButton.setEnabled(true);
 
         ButtonGroup buttonGroup = new ButtonGroup();
         buttonGroup.add(rainbowbutton);
@@ -109,7 +137,7 @@ public class GamePanel extends JPanel implements ActionListener {
         panelInputMap.put(KeyStroke.getKeyStroke('D'), "rightActionMapKey");
         panelActionMap.put("rightActionMapKey", new KeyAction('R'));
 
-        this.setPreferredSize(new Dimension(SCREEN_WIDTH, SCREEN_HEIGHT));
+        this.setBounds(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
         this.setBackground(Color.WHITE);
         this.setFocusTraversalKeysEnabled(false);
         this.setLayout(null);
@@ -118,8 +146,10 @@ public class GamePanel extends JPanel implements ActionListener {
         this.add(startLabel);
         startLabel.add(startButton);
         startLabel.add(exitButton);
+        startLabel.add(restartButton);
         startLabel.add(rainbowbutton);
         startLabel.add(staticColourButton);
+        
     }
 
     public void startGame() {
@@ -142,15 +172,14 @@ public class GamePanel extends JPanel implements ActionListener {
         // Enable anti-aliasing for text (optional)
         g2D.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         
-        // Set rendering quality
-        g2D.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-        
 
         if (!gameEnded) startMenu(g2D);
         draw(g2D); //Implement draw image
     }
 
     public void draw(Graphics g) {
+        Graphics2D g2D = (Graphics2D) g;
+
         if (running) {
             //Draw Grid
             /*for (int i = 0; i <= SCREEN_HEIGHT / CELL_SIZE; i++) {
@@ -160,7 +189,7 @@ public class GamePanel extends JPanel implements ActionListener {
             }*/
 
            //Draw Background
-           g.drawImage(cityBackground, 0, 0, null);
+           g.drawImage(snakeRuinsBackground, 0, 0, null);
 
             //Draw Apple
             switch(appleChoice) {
@@ -172,13 +201,17 @@ public class GamePanel extends JPanel implements ActionListener {
             //Draw Snake
             for (int i = 0; i < bodyParts; i++) {
                 if (i == 0) {
-                    g.setColor(headColor);
+                    g.setColor(new Color(144, 238, 144));
                     g.fillRect(x[i], y[i], CELL_SIZE, CELL_SIZE);
                 }
                 else {
-                    g.setColor(new Color(144, 238, 144));
-                    g.fillRect(x[i], y[i], CELL_SIZE, CELL_SIZE);
-                    //g.setColor(new Color(random.nextInt(256), random.nextInt(256), random.nextInt(256)));
+                    if (rainbowBody) {
+                        g.setColor(new Color(random.nextInt(256), random.nextInt(256), random.nextInt(256)));
+                        g.fillRect(x[i], y[i], CELL_SIZE, CELL_SIZE);
+                    } else {
+                        g.setColor(bodyColor);
+                        g.fillRect(x[i], y[i], CELL_SIZE, CELL_SIZE);
+                    }
                 }
             }
 
@@ -189,30 +222,69 @@ public class GamePanel extends JPanel implements ActionListener {
             g.drawString("Score: " + applesEaten, (SCREEN_WIDTH - fontMetrics.stringWidth("Score: " + applesEaten)) / 2, g.getFont().getSize());
         } else if (gameEnded){
             gameOver(g);
+            startLabel.setVisible(true);
+            startLabel.setBorder(null);
+
+            startButton.setVisible(false);
+            startButton.setEnabled(false);
+
+            rainbowbutton.setVisible(false);
+            rainbowbutton.setEnabled(false);
+
+            staticColourButton.setVisible(false);
+            startButton.setEnabled(false);
+
+            exitButton.setForeground(Color.RED);
+            exitButton.setContentAreaFilled(true);
+            exitButton.setBackground(Color.BLACK);
+
+            restartButton.setEnabled(true);
+            restartButton.setVisible(true);
+            restartButton.setContentAreaFilled(true);
+            restartButton.setBackground(Color.BLACK);
         }
     }
 
     public void gameOver(Graphics g) {
+        //Graphics2D g2D = (Graphics2D) g;
+        
+        g.drawImage(gameOverBackground, 0, 0, null);
+
         g.setColor(Color.RED);
-        g.setFont(new Font("Monospaced", Font.BOLD, 32));
+        g.setFont(new Font("Monospaced", Font.BOLD, 42));
         FontMetrics fontMetrics = g.getFontMetrics();
         g.drawString("Score: " + applesEaten, (SCREEN_WIDTH - fontMetrics.stringWidth("Score: " + applesEaten)) / 2, g.getFont().getSize());
 
-        g.setFont(new Font("Monospaced", Font.BOLD, 42));
+        g.setFont(new Font("Monospaced", Font.BOLD, 62));
         FontMetrics fontMetrics1 = g.getFontMetrics();
+        g.setColor(Color.BLACK);
+        g.fillRect(75, 195, 350, 70);
+        g.setColor(Color.RED);
+        g.drawRect(75, 195, 350, 70);
         g.drawString("Game Over", (SCREEN_WIDTH - fontMetrics1.stringWidth("Game Over")) / 2, 250);
+
+        //Draw Shortcuts
+        g.setFont(new Font("Monospaced", Font.BOLD, 16));
+        FontMetrics fontMetrics2 = g.getFontMetrics();
+        g.drawString("Restart - Alt S : Exit - Alt E", (SCREEN_WIDTH - fontMetrics2.stringWidth("Restart - Alt S : Exit - Alt E")) / 2, 450);
     }
 
     public void startMenu(Graphics g) {
-        g.drawImage(forestBackground, 0, 0, null);
+        g.drawImage(snakeRuinsBackground, 0, 0, null);
         
-
-        g.setColor(new Color(240, 240, 240));
-        g.setFont(new Font("Monospaced", Font.BOLD, 60));
+        
+        g.setColor(bodyColor);
+        g.setFont(new Font("`Monospaced", Font.BOLD, 60));
         FontMetrics fontMetrics = g.getFontMetrics();
         g.drawString("Welcome", (SCREEN_WIDTH - fontMetrics.stringWidth("Welcome")) / 2, g.getFont().getSize() + 30);
 
+        //Draw Shortcuts
+        g.setFont(new Font("Monospaced", Font.BOLD, 12));
+        FontMetrics fontMetrics1 = g.getFontMetrics();
+        g.drawString("Start - Alt S : Exit - Alt E : Rainbow - Alt R : Static - Alt R", (SCREEN_WIDTH - fontMetrics1.stringWidth("Start - Alt S : Exit - Alt E : Rainbow - Alt R : Static - Alt R")) / 2, 450);
 
+        //g.setColor(new Color(random.nextInt(256), random.nextInt(256), random.nextInt(256)));
+        //g.fillOval(150, 260, 20, 20);
     }
 
     public void newApple() {
@@ -289,11 +361,25 @@ public class GamePanel extends JPanel implements ActionListener {
         if (ae.getSource() == startButton) {
             startGame();
             startLabel.setVisible(false);
+
         } else if (ae.getSource() == exitButton) {
-            new GameFrame().dispose();
+            gameFrame.dispose();
+
+        } else if (ae.getSource() == restartButton) {
+            gameFrame.dispose();
+            new GameFrame();
+
         } else if (ae.getSource() == staticColourButton) {
-            headColor = JColorChooser.showDialog(null, "Snake Head Color", null);
-            
+            bodyColor = JColorChooser.showDialog(null, "Snake Body Color", null);
+            staticColourButton.setForeground(bodyColor);
+            rainbowbutton.setForeground(bodyColor);
+            startButton.setForeground(bodyColor);
+            exitButton.setForeground(bodyColor);
+
+        } else if (ae.getSource() == rainbowbutton) {
+            if (rainbowbutton.isSelected()) {
+                rainbowBody = true;
+            }
         }
         
         if (running) {
